@@ -1,0 +1,17 @@
+﻿--------------------------------------------------------------------------------------
+
+                               NHWAVE update records
+                                                                      by Martin HU
+--------------------------------------------------------------------------------------
+
+UPDATE_00001
+by HU
+2021/04/15
+
+■ Additions: added a new variable OUT_Te (Logical Var.) indicating the outputting process of Temperature Field Data
+· add the variable declaration of OUT_Te in mod_global.F
+· add the instructions of reading the value of OUT_Te from input.txt (initialize.F)
+· add instructions in nhwave.F : if OUT_Te = T, CALL putfile3D() 
+//
+
+
