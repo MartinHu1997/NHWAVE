@@ -12,6 +12,20 @@ by HU
 · add the variable declaration of OUT_Te in mod_global.F
 · add the instructions of reading the value of OUT_Te from input.txt (initialize.F)
 · add instructions in nhwave.F : if OUT_Te = T, CALL putfile3D() 
+· add instructions in input.txt for "output" : OUT_Te = T (or OUT_Te = F)
 //
 
+UPDATE_00002
+by HU
+2021/04/20
+■ Corrected the typos in nhwave.F 
+· in the process of calculating dt_viscous (subroutine estimate_dt)
+-- replace '1.e-16' with by 'Small'  (Small=1.e-16 as a global variable)
 
+■ Additions: Inputting INITIAL Temperature Field Data is allowed
+· add the variable declaration of INITIAL_TEMP (Logical Var.) in mod_global.F
+· additions in SUBROUTINE initial (in initialize.F)
+-- add the variable declaration of TempG (Real Var.)
+-- add a code section, similar to the SALINITY codes/modules, for reading initial temperature field from an input file (temp0.txt)
+· add instructions in input.txt for "output" : INITIAL_TEMP = T (or INITIAL_TEMP = F)
+//

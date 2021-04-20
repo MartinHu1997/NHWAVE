@@ -977,6 +977,11 @@
      CALL GET_LOGICAL_VAL(INITIAL_SALI,FILE_NAME,'INITIAL_SALI',line)
 # endif
 
+# if defined (TEMPERATURE)  
+   ! added by HU,20210420
+     CALL GET_LOGICAL_VAL(INITIAL_TEMP,FILE_NAME,'INITIAL_TEMP',line)
+# endif
+
 # if defined (SEDIMENT)
      ! sediment parameters
      CALL GET_STRING_VAL(Sed_Type,FILE_NAME,'Sed_Type',line,ierr)
@@ -2526,7 +2531,8 @@
                  alpha0,L0,T,bl,hs0,ls0,ls1,ls2,lsx,lsx1,hslide,  &                   
                  eslide,xt,yt,zt,kb,kw,Slope,Xslide,SlideX1,SlideX2
      real(SP), dimension(Mglob,Nglob) :: EtaG
-     real(SP), dimension(Mglob,Nglob,Kglob) :: UG,VG,WG,SaliG
+     real(SP), dimension(Mglob,Nglob,Kglob) :: UG,VG,WG,SaliG,TempG
+                 ! added TempG (HU, 20210420)
 
      ! simulation time
      TIME = Zero
@@ -2758,6 +2764,12 @@
 
 # if defined (TEMPERATURE)
      Temp = 10.
+!---------------- added by HU, 20210420
+     DTemp = 10.
+     DTemp0 = 10.
+     Tin_X0 = 10.
+     Tin_Xn = 10.
+!------------------
 # endif
 
 # if defined (VEGETATION)
@@ -3266,6 +3278,78 @@
 
      call eval_dens
 # endif
+
+!--------------------------------
+!---------- added by HU,20210420
+# if defined (TEMPERATURE)
+
+     ! read initial temperature field from an input file
+     if(INITIAL_TEMP) then
+       open(24,file='temp0.txt',status='old')
+       do k = 1,Kglob
+       do j = 1,Nglob
+         read(24,*) (TempG(i,j,k),i=1,Mglob)
+       enddo
+       enddo
+
+# if defined (PARALLEL)
+       do j = Jbeg,Jend
+       do i = Ibeg,Iend
+         iglob = npx*(Mloc-2*Nghost)+i-Nghost
+         jglob = npy*(Nloc-2*Nghost)+j-Nghost
+         do k = Kbeg,Kend
+           Temp(i,j,k) = TempG(iglob,jglob,k-Nghost)
+         enddo
+       enddo
+       enddo
+# else
+       do j = Jbeg,Jend
+       do i = Ibeg,Iend
+         iglob = i-Nghost
+         jglob = j-Nghost
+         do k = Kbeg,Kend
+           Temp(i,j,k) = TempG(iglob,jglob,k-Nghost)
+         enddo
+       enddo
+       enddo
+# endif
+     else
+!       do i = Ibeg,Iend
+!       do j = Jbeg,Jend
+!       do k = Kbeg,Kend
+!         Temp(i,j,k) = (1.0-sigc(k))*0.01
+!       enddo
+!       enddo
+!       enddo
+       Temp = 10.
+     endif
+
+     ! boundary conditions
+     do j = Jbeg,Jend
+     do k = Kbeg,Kend
+       Tin_X0(j,k) = Temp(Ibeg,j,k)
+       Tin_Xn(j,k) = Temp(Iend,j,k)
+     enddo
+     enddo
+!     call sali_bc
+
+# if defined (PARALLEL)
+     call phi_3D_exch(Temp)
+# endif
+
+     do i = 1,Mloc
+     do j = 1,Nloc
+     do k = 1,Kloc
+       DTemp(i,j,k) = D(i,j)*Temp(i,j,k)
+     enddo
+     enddo
+     enddo     
+
+     DTemp0 = DTemp
+
+     call eval_dens
+# endif
+!--------------------------------
 
 # if defined (LANDSLIDE)
      if(trim(SlideType)=='DEFORMABLE') then

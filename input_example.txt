@@ -51,8 +51,10 @@ DepConst = 0.2
 
 ! -------------------INITIAL CONDITION---------------------------
 ! if INITIAL_SALI = T, need file sali0.txt
+! if INITIAL_TEMP = T, need file temp0.txt (added by HU, 20210420)
 INITIAL_EUVW = F
 INITIAL_SALI = F
+INITIAL_TEMP = T
 
 ! -----------------HOT START----------------------------------
 HOTSTART = F
