@@ -502,10 +502,8 @@
 # endif
 
      ! numerical scheme
+
      CALL GET_STRING_VAL(HIGH_ORDER,FILE_NAME,'HIGH_ORDER',line,ierr)
-     CALL GET_STRING_VAL(TIME_ORDER,FILE_NAME,'TIME_ORDER',line,ierr)
-     CALL GET_STRING_VAL(CONVECTION,FILE_NAME,'CONVECTION',line,ierr)
-     CALL GET_LOGICAL_VAL(ADV_HLLC,FILE_NAME,'HLLC',line)
      IF(ierr==1)THEN
 # if defined (PARALLEL)
        if(myid.eq.0) WRITE(3,'(A12,A50)')'HIGH_ORDER', 'NOT DEFINED, USE DEFAULT'
@@ -519,6 +517,8 @@
 # else
      WRITE(3,'(A12,A50)')'HIGH_ORDER= ', HIGH_ORDER
 # endif
+
+     CALL GET_STRING_VAL(TIME_ORDER,FILE_NAME,'TIME_ORDER',line,ierr)
      IF(ierr==1)THEN
 # if defined (PARALLEL)
        if(myid.eq.0) WRITE(3,'(A12,A50)')'TIME_ORDER', 'NOT DEFINED, USE DEFAULT'
@@ -532,6 +532,26 @@
 # else
      WRITE(3,'(A12,A50)')'TIME_ORDER= ', TIME_ORDER
 # endif
+
+     CALL GET_STRING_VAL(CONVECTION,FILE_NAME,'CONVECTION',line,ierr)
+     CALL GET_LOGICAL_VAL(ADV_HLLC,FILE_NAME,'HLLC',line)
+
+      ! added by HU, 20210427------
+     CALL GET_STRING_VAL(LIMITER_TYPE,FILE_NAME,'LIMITER_TYPE',line,ierr)
+     IF(ierr==1)THEN
+# if defined (PARALLEL)
+       if(myid.eq.0) WRITE(3,'(A14,A50)')'LIMITER_TYPE', 'NOT DEFINED, USE DEFAULT'
+# else
+       WRITE(3,'(A14,A50)')'LIMITER_TYPE', 'NOT DEFINED, USE DEFAULT'
+# endif
+       LIMITER_TYPE='VANLEER'
+     ENDIF
+# if defined (PARALLEL)
+     if(myid.eq.0) WRITE(3,'(A14,A50)')'LIMITER_TYPE= ', LIMITER_TYPE
+# else
+     WRITE(3,'(A14,A50)')'LIMITER_TYPE= ', LIMITER_TYPE
+# endif
+      !---------------------------
 
      ! ramp up the simulation
      CALL GET_Float_VAL(TRamp,FILE_NAME,'TRAMP',line)
@@ -1722,6 +1742,32 @@
      do k = 1,Nghost
      dsig(Kend+k) = dsig(Kend-k+1)
      enddo
+       ! 'elseif (Ivgrd==10) ' was added by HU, 20210426
+     elseif (Ivgrd==10) then   
+     open(29,file='verticalgrid.txt',status='old')
+     dsig = 0.0
+     do k = Kbeg,Kend
+        read(29,*)  dsig(k)
+     enddo
+     if ( ABS(SUM(dsig)-100.0) > Small ) then
+# if defined (PARALLEL)
+     if(myid.eq.0) then
+         write(3,*) 'the sum of dsigma is not equal to 100 (%) !!',SUM(dsig)
+         stop
+     endif
+# else
+     write(3,*) 'the sum of dsigma is not equal to 100 (%) !!',SUM(dsig)
+     stop
+# endif
+     endif
+     do k = Kbeg,Kend
+        dsig(k) = dsig(k) / 100.0;
+     enddo
+     do k = 1,Nghost
+        dsig(Kbeg-k) = dsig(Kbeg+k-1)
+        dsig(Kend+k) = dsig(Kend-k+1)
+     enddo
+      !----------------------------------------
      endif
 
      sig(Kbeg) = Zero

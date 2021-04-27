@@ -44,6 +44,8 @@
      character(len=80) :: dt_constraint
      character(len=80) :: CONVECTION
      character(len=80) :: DEPTH_FILE
+      ! add LIMITER_TYPE (HU, 20210427)
+     character(len=80) :: LIMITER_TYPE
 
 # if defined (PARALLEL)
      integer :: myid,ier

@@ -29,3 +29,28 @@ by HU
 -- add a code section, similar to the SALINITY codes/modules, for reading initial temperature field from an input file (temp0.txt)
 · add instructions in input.txt for "output" : INITIAL_TEMP = T (or INITIAL_TEMP = F)
 //
+
+UPDATE_00003
+by HU
+2021/04/26
+■ Addition the input option of User-Defined VERTICAL GRIDS in initialize.F (user defind vertical grid)
+· if IVGRD = 10, the nhwave can read a data file called verticalgrid.txt , which contains an array of real numbers. And these numbers specify the 'Thickness Percentage' of every vertical layers;
+(NOTE: there is the sigma-coordinate in nhwave, thus the sum of numbers in verticalgrid.txt must be equal to 100.0).
+· add a new elseif-branch for IVGRD=10 (subroutine generate_grid)
+· This feature is still in testing !!!
+//
+
+UPDATE_00004
+by HU
+2021/04/27
+■ Addition the input option of LIMITER_TYPE in initialize.F
+· add the variable declaration of LIMITER_TYPE (String Var.) in mod_global.F
+· add the instructions for reading the value of LIMITER_TYPE from input.txt (initialize.F)
+ -- LIMITER_TYPE = 'MINMOD' or 'VANLEER' or 'SUPERBEE'
+· rewrite the FUNCTION LIMITER(A,B)  (in nhwave.F)
+■ Changes (in initialize.F)
+· change the code sequence that matched every <if ierr==1> to the corresponding <GET_STRING_VAL(......)>
+ -- including 'CALL GET_STRING_VAL(HIGH_ORDER,FILE_NAME,'HIGH_ORDER',line,ierr)'
+ -- including 'CALL GET_STRING_VAL(TIME_ORDER,FILE_NAME,'TIME_ORDER',line,ierr)'
+· correct the logical sequences of these codes
+//

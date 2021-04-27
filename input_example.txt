@@ -32,7 +32,8 @@ DX = 0.02
 DY = 0.02
 
 ! ---------------------VERTICAL GRID OPTION--------------------
-! IVGRD = 1: uniform; 2: exponential
+! IVGRD = 1: uniform; 2: exponential (increasing from bottom to surface); 
+!               10: user defined (verticalgrid.txt is needed, added by HU, 20210426).
 IVGRD = 1
 GRD_R = 1.1
 
@@ -54,7 +55,7 @@ DepConst = 0.2
 ! if INITIAL_TEMP = T, need file temp0.txt (added by HU, 20210420)
 INITIAL_EUVW = F
 INITIAL_SALI = F
-INITIAL_TEMP = T
+INITIAL_TEMP = F
 
 ! -----------------HOT START----------------------------------
 HOTSTART = F
@@ -78,10 +79,14 @@ COUPLING_FILE = coupling.txt
 
 ! ----------------------NUMERICS----------------------------
 ! Scalar convection scheme: "TVD" or "HLPA"
+! LIMITER_TYPE = "MINMOD" : Minmod limiter;
+!                       = "VANLEER" : Van Leer limiter (DEFAULT)
+!                       = "SUPERBEE" : Superbee limiter
 HIGH_ORDER = SECOND
 TIME_ORDER = SECOND
 CONVECTION = HLPA
 HLLC = F
+LIMITER_TYPE = SUPERBEE
 
 ! ----------------------BOTTOM ROUGHNESS-------------------
 ! Ibot = 1: given the drag coefficient Cd0

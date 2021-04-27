@@ -2820,7 +2820,8 @@
 !-----------------------------------------------
      use global, only: SP,Ibeg,Iend,Iend1,Jbeg,Jend,Jend1,Kbeg,Kend, &
                        DxL,DxR,DyL,DyR,UxL,UxR,VyL,VyR, &
-                       SxL,SxR,SxS,SyL,SyR,SyS,Grav,Mask
+                       SxL,SxR,SxS,SyL,SyR,SyS,Grav,Mask 
+
      implicit none
      integer  :: i,j,k
      real(SP) :: SQR_PHI_L,SQR_PHI_R,SQR_PHI_S,U_S
@@ -2887,16 +2888,31 @@
 
 
      FUNCTION LIMITER(A,B)
-     use global, only: SP,Zero,One,Small
+     use global, only: SP,Zero,One,Small,LIMITER_TYPE
+                     ! add LIMITER_TYPE (HU, 20210427)
      IMPLICIT NONE
      REAL(SP),INTENT(IN) :: A,B
      REAL(SP) :: LIMITER
 
+      ! added by HU, 20210427------
+     if (LIMITER_TYPE(1:3) == 'VAN') then
+        ! Van Leer Limiter
+        LIMITER=(A*ABS(B)+ABS(A)*B)/(ABS(A)+ABS(B))
+     elseif (LIMITER_TYPE(1:3) == 'MIN') then
+        ! Minmod Limiter
+        LIMITER=max(Zero,min(A,B))
+     elseif (LIMITER_TYPE(1:3) == 'SUP') then
+        ! Superbee Limiter
+        LIMITER=SIGN(One,B)*MAX(Zero,MIN(2.0*ABS(B),SIGN(One,B)*A), &
+                MIN(ABS(B),2.0*SIGN(One,B)*A))
+     endif
+      !---------------------------
+     
 !     ! minmod limiter
 !     LIMITER=max(Zero,min(A,B))
 
 !     ! van Leer limiter
-     LIMITER=(A*ABS(B)+ABS(A)*B)/(ABS(A)+ABS(B))
+!     LIMITER=(A*ABS(B)+ABS(A)*B)/(ABS(A)+ABS(B))
 
 !     ! superbee limiter
 !     LIMITER=SIGN(One,B)*MAX(Zero,MIN(2.0*ABS(B),SIGN(One,B)*A),  &
