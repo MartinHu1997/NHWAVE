@@ -151,7 +151,7 @@
        ! update boundary conditions       
        call update_wave_bc
 
-       ! update mask
+       ! update mask for wetting-drying
        call update_mask
 
 # if defined (TWOLAYERSLIDE)
@@ -217,6 +217,13 @@
          ! update density
          call eval_dens  
 # endif
+
+!------ added by HU, 20210517
+# if defined (TRACERS)
+         ! update tracers
+         call eval_tracer(Istage)
+# endif
+!---------------------------
 
 # if defined (BUBBLE)
          if(TIME>=TIM_B) then
@@ -3475,6 +3482,14 @@
      endif
 # endif
 
+# if defined (TRACERS)
+   !added by HU, 20210517
+     if(OUT_Tr) then
+       file=TRIM(FDIR)//'Tr_'//TRIM(FILE_NAME)
+       call putfile3D(file,Trac)
+     endif
+# endif
+
 # if defined (POROUSMEDIA)
      file=TRIM(FDIR)//'por_'//TRIM(FILE_NAME)
      call putfile3D(file,Porosity)
@@ -5520,6 +5535,12 @@
      DSali0 = Dsali
 # endif
 
+!------------ added by HU, 20210517
+# if defined (TRACERS)
+     DTrac0 = DTrac
+# endif
+!--------------------------
+
 # if defined (TWOLAYERSLIDE)
      Ha0 = Ha
      HUa0 = HUa
@@ -5643,6 +5664,12 @@
        Sin_X0(j,k) = 0.0
 # endif
 
+!------------ added by HU, 20210517
+# if defined (TRACERS)
+       Trin_X0(j,k) = 0.0
+# endif
+!-----------------
+
 # if defined (SEDIMENT)
        open(41,file='cin0.txt')
        do n = 1,8
@@ -5722,6 +5749,12 @@
 # if defined (SALINITY)
        Sin_Xn(j,k) = 30.0
 # endif
+
+!------------ added by HU, 20210517
+# if defined (TRACERS)
+       Trin_Xn(j,k) = 0.0
+# endif
+!-----------------
 
 # if defined (SEDIMENT)
        Sed_Xn(j,k) = Conc(Iend,j,k)
@@ -7635,6 +7668,7 @@ endif
 !    = 4: temperature
 !    = 5: bubble number density 
 !    = 6: sediment concentration 
+!    = 7: passive tracer(s) [added by HU, 20210517]
 !   Last update: Gangfeng Ma, 04/04/2012
 !-------------------------------------------------------  
     use global
@@ -7890,13 +7924,25 @@ endif
 	Scal_X0 = Zero
 	Scal_Xn = Zero
 # if defined (SEDIMENT)
-    Scal_X0 = Sed_X0
-    Scal_Xn = Sed_Xn
+    if(IVAR==6) then
+      Scal_X0 = Sed_X0
+      Scal_Xn = Sed_Xn
+    endif
 # endif
 # if defined (SALINITY)
-    Scal_X0 = Sin_X0
-    Scal_Xn = Sin_Xn
+    if(IVAR==3) then
+      Scal_X0 = Sin_X0
+      Scal_Xn = Sin_Xn
+    endif
 # endif
+!------ added by HU, 20210517
+# if defined (TRACERS)
+    if(IVAR==7) then
+      Scal_X0 = Trin_X0
+      Scal_Xn = Trin_Xn
+    endif
+# endif
+!---------------------------
 
     ! left and right side
 # if defined (PARALLEL)

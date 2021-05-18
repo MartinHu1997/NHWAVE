@@ -21,6 +21,7 @@
 #	 FLAG_12 = -DTWOLAYERSLIDE
 #	 FLAG_13 = -DCORALREEF
 #	 FLAG_14 = -DPOROUSMEDIA
+#          FLAG_15 = -DTRACERS
 #--------------------------------------------------------------------------
 #  mpi defs 
 #--------------------------------------------------------------------------
@@ -40,7 +41,8 @@
 #--------------------------------------------------------------------------
          CPPARGS = $(CPPFLAGS) $(DEF_FLAGS) $(FLAG_1) $(FLAG_2) $(FLAG_3) \
                    $(FLAG_4) $(FLAG_5) $(FLAG_6) $(FLAG_7) $(FLAG_8) $(FLAG_9) \
-	           $(FLAG_10) $(FLAG_11) $(FLAG_12) $(FLAG_13) $(FLAG_14)
+	           $(FLAG_10) $(FLAG_11) $(FLAG_12) $(FLAG_13) $(FLAG_14) \
+                           $(FLAG_15)
 #--------------------------------------------------------------------------
 #  Libraries           
 #--------------------------------------------------------------------------
@@ -62,7 +64,7 @@
 MODS  = mod_global.F	mod_util.F 
 
 MAIN  = nhwave.F initialize.F two_layer_slide.F fluid_slide.F deformable_slide.F\
-        source_terms.F waves.F pressure.F
+        source_terms.F waves.F pressure.F tracer.F
 
 SRCS = $(MODS)  $(MAIN)
 

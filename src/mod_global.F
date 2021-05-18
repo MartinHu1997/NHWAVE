@@ -98,6 +98,13 @@
      real(SP), dimension(:,:), allocatable :: Tin_X0,Tin_Xn
 # endif
 
+!------ added by HU, 20210517
+# if defined (TRACERS)
+     real(SP), dimension(:,:,:), allocatable :: Trac,DTrac,DTrac0
+     real(SP), dimension(:,:), allocatable :: Trin_X0,Trin_Xn 
+# endif
+!---------------------------
+
 # if defined (VEGETATION)
      character(len=80) :: Veg_Type
      real(SP) :: VegH,VegDens,StemD,VegDrag,VegVol,VegVM,Veg_X0,Veg_Xn,Veg_Y0,Veg_Yn,EI,Cfe,Cfk
@@ -181,11 +188,11 @@
 # endif
 
 ! define output logical parameters
-     logical :: ANA_BATHY,NON_HYDRO,VISCOUS_FLOW,SPONGE_ON,OUT_H,OUT_E,OUT_U,OUT_V,OUT_W,OUT_P,OUT_Te, &
+     logical :: ANA_BATHY,NON_HYDRO,VISCOUS_FLOW,SPONGE_ON,OUT_H,OUT_E,OUT_U,OUT_V,OUT_W,OUT_P,OUT_Te,OUT_Tr, &
                 OUT_K,OUT_D,OUT_S,OUT_C,OUT_B,OUT_A,OUT_F,OUT_T,OUT_G,OUT_I,OUT_Z,OUT_M,PERIODIC_X,PERIODIC_Y, &
                 WAVE_AVERAGE_ON,ADV_HLLC,BAROTROPIC,RIGID_LID,BED_CHANGE,EXTERNAL_FORCING,STATIONARY, &
-                INITIAL_EUVW,INITIAL_SALI,INITIAL_TEMP,RHEOLOGY_ON,RNG
-                ! add OUT_Te (HU, 20210415); INITIAL_TEMP(HU, 20210420)
+                INITIAL_EUVW,INITIAL_SALI,INITIAL_TEMP,INITIAL_TRAC,RHEOLOGY_ON,RNG
+                ! add OUT_Te (HU, 20210415); INITIAL_TEMP (HU, 20210420); INITIAL_TRAC, OUT_Tr (HU, 20210517)
                 
 ! variables
      integer :: It_Order,Ibeg,Iend,Iend1,Jbeg,Jend,Jend1,Kbeg,Kend,Kend1,PX,PY,IVturb,IHturb,Iws,  &

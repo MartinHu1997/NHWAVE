@@ -43,7 +43,7 @@ by HU
 UPDATE_00004
 by HU
 2021/04/27
-■ Addition the input option of LIMITER_TYPE in initialize.F
+■ Addition of the input option of LIMITER_TYPE in initialize.F
 · add the variable declaration of LIMITER_TYPE (String Var.) in mod_global.F
 · add the instructions for reading the value of LIMITER_TYPE from input.txt (initialize.F)
  -- LIMITER_TYPE = 'MINMOD' or 'VANLEER' or 'SUPERBEE'
@@ -54,3 +54,42 @@ by HU
  -- including 'CALL GET_STRING_VAL(TIME_ORDER,FILE_NAME,'TIME_ORDER',line,ierr)'
 · correct the logical sequences of these codes
 //
+
+UPDATE_00005
+by HU
+2021/05/15
+■ Adding a new simulating case, named 'Lock-Exchange_2D', in filefold 'new examples cases by HU'
+
+UPDATE_00006
+by HU
+2021/05/17
+■ Addition of a new MODULE named 'PASSIVE TRACERS' for simulating the motion of conservative tracer(s)
+· define a new FLAG for compilation: TRACERS
+· add a piece of codes, tracer.F
+-- including two subroutine: eval_tracer and tracer_bc
+· add the variables declaration of variables in mod_global.F
+ -- Trac,DTrac,DTrac0 (real, 3-D arrray)
+ -- Trin_X0,Trin_Xn (real, 2-D arrray)
+ -- INITIAL_TRAC, OUT_Tr (Logical Var.)
+· add instructions in initialize.F
+ -- reading the value of INITIAL_TRAC from input.txt
+ -- reading the value of OUT_Tr from input.txt
+ -- allocating the space for new variables (Trac,DTrac,DTrac0,Trin_X0,Trin_Xn)
+ -- the variable declaration of TempG (Real Var.) in subroutine initial
+ -- giving initial values (Zero) to Trac, DTrac, DTrac0, Trin_X0 and Trin_Xn
+ -- a code section in initial.F, similar to the SALINITY modules, for reading initial tracers concentration field from an input file (trac0.txt)
+· add the instructions in nhwave.F
+ -- calling eval_tracer in main program
+ -- instructions for outputing in subroutine preview : if OUT_Te = T, CALL putfile3D() 
+ -- 'DTrac0 = DTrac' in subroutine update_vars
+ -- 'Trin_X0(j,k) = 0.0' and 'Trin_Xn(j,k) = 0.0' in subroutine flux_left_right_boundary
+ -- a new parameter option (IVAR=7) for subroutine adv_scalar_hlpa
+ -- 'Scal_X0 = Trin_X0' and 'Scal_Xn = Trin_Xn' in subroutine flux_scalar_bc 
+· add a new option in Makefile
+ -- a new flag (FLAG_15 = -DTRACERS)
+ -- a new source code file (tracer.F) in MAIN
+■ find a bug in subroutine initial from initial.F
+· when initializing the temperature field, variables DTemp and DTEMP0 are supposed to be equal to D*Temp(0), instead of a constant 10.0.
+  BUT, it doesn't matter now.
+
+

@@ -1002,6 +1002,11 @@
      CALL GET_LOGICAL_VAL(INITIAL_TEMP,FILE_NAME,'INITIAL_TEMP',line)
 # endif
 
+# if defined (TRACERS)  
+   ! added by HU,20210517
+     CALL GET_LOGICAL_VAL(INITIAL_TRAC,FILE_NAME,'INITIAL_TRAC',line)
+# endif
+
 # if defined (SEDIMENT)
      ! sediment parameters
      CALL GET_STRING_VAL(Sed_Type,FILE_NAME,'Sed_Type',line,ierr)
@@ -1300,6 +1305,7 @@
      CALL GET_LOGICAL_VAL(OUT_G,FILE_NAME,'OUT_G',line)
      CALL GET_LOGICAL_VAL(OUT_I,FILE_NAME,'OUT_I',line)
        CALL GET_LOGICAL_VAL(OUT_Te,FILE_NAME,'OUT_Te',line) !added by HU, 20210415
+       CALL GET_LOGICAL_VAL(OUT_Tr,FILE_NAME,'OUT_Tr',line) !added by HU, 20210517
 	 CALL GET_LOGICAL_VAL(OUT_Z,FILE_NAME,'OUT_Z',line) !added by Cheng for varying depth
 	 CALL GET_LOGICAL_VAL(OUT_M,FILE_NAME,'OUT_M',line) !added by Cheng for recording Hmax
 # if defined (PARALLEL)
@@ -1320,6 +1326,7 @@
      if(myid.eq.0) WRITE(3,'(A7,L4)') 'OUT_G= ',OUT_G
      if(myid.eq.0) WRITE(3,'(A7,L4)') 'OUT_I= ',OUT_I
        if(myid.eq.0) WRITE(3,'(A7,L4)') 'OUT_Te= ',OUT_Te  !added by HU, 20210415
+       if(myid.eq.0) WRITE(3,'(A7,L4)') 'OUT_Tr= ',OUT_Tr  !added by HU, 20210517
 	 if(myid.eq.0) WRITE(3,'(A7,L4)') 'OUT_Z= ',OUT_Z !added by Cheng for varying depth
 	 if(myid.eq.0) WRITE(3,'(A7,L4)') 'OUT_M= ',OUT_M !added by Cheng for recording Hmax
 # else
@@ -1340,6 +1347,7 @@
      WRITE(3,'(A7,L4)') 'OUT_G= ',OUT_G
      WRITE(3,'(A7,L4)') 'OUT_I= ',OUT_I
        WRITE(3,'(A7,L4)') 'OUT_Te= ',OUT_Te  !added by HU, 20210415
+       WRITE(3,'(A7,L4)') 'OUT_Tr= ',OUT_Tr  !added by HU, 20210517
 	 WRITE(3,'(A7,L4)') 'OUT_Z= ',OUT_Z !added by Cheng for varying depth
 	 WRITE(3,'(A7,L4)') 'OUT_M= ',OUT_M !added by Cheng for recording Hmax
 # endif
@@ -1552,6 +1560,13 @@
      ALLOCATE(Temp(Mloc,Nloc,Kloc),DTemp(Mloc,Nloc,Kloc),DTemp0(Mloc,Nloc,Kloc))                                    
      ALLOCATE(Tin_X0(Nloc,Kloc),Tin_Xn(Nloc,Kloc))
 # endif
+
+!------------ added by HU, 20210517
+# if defined (TRACERS)
+     ALLOCATE(Trac(Mloc,Nloc,Kloc),DTrac(Mloc,Nloc,Kloc),DTrac0(Mloc,Nloc,Kloc))                                    
+     ALLOCATE(Trin_X0(Nloc,Kloc),Trin_Xn(Nloc,Kloc))
+# endif
+!----------------------
 
 # if defined (VEGETATION)
      ALLOCATE(Prod_v(Mloc,Nloc,Kloc),FVegH(Mloc,Nloc),foliage(Mloc,Nloc),Prod_w(Mloc,Nloc,Kloc), &
@@ -2577,8 +2592,8 @@
                  alpha0,L0,T,bl,hs0,ls0,ls1,ls2,lsx,lsx1,hslide,  &                   
                  eslide,xt,yt,zt,kb,kw,Slope,Xslide,SlideX1,SlideX2
      real(SP), dimension(Mglob,Nglob) :: EtaG
-     real(SP), dimension(Mglob,Nglob,Kglob) :: UG,VG,WG,SaliG,TempG
-                 ! added TempG (HU, 20210420)
+     real(SP), dimension(Mglob,Nglob,Kglob) :: UG,VG,WG,SaliG,TempG,TracG
+                 ! add TempG (HU, 20210420); TracG (HU, 20210517)
 
      ! simulation time
      TIME = Zero
@@ -2811,12 +2826,22 @@
 # if defined (TEMPERATURE)
      Temp = 10.
 !---------------- added by HU, 20210420
-     DTemp = 10.
-     DTemp0 = 10.
+     DTemp = 10.    ! error here should by D*Temp (20210517)
+     DTemp0 = 10.   ! error here should by D*Temp0 (20210517)
      Tin_X0 = 10.
      Tin_Xn = 10.
 !------------------
 # endif
+
+!---------------- added by HU, 20210517
+# if defined (TRACERS)
+     Trac = Zero
+     DTrac = Zero
+     DTrac0 = Zero
+     Trin_X0 = Zero
+     Trin_Xn = Zero
+# endif
+!-------------------
 
 # if defined (VEGETATION)
      FVegH = VegH
@@ -3337,7 +3362,8 @@
          read(24,*) (TempG(i,j,k),i=1,Mglob)
        enddo
        enddo
-
+       close(24)
+       
 # if defined (PARALLEL)
        do j = Jbeg,Jend
        do i = Ibeg,Iend
@@ -3377,7 +3403,7 @@
        Tin_Xn(j,k) = Temp(Iend,j,k)
      enddo
      enddo
-!     call sali_bc
+!     call temp_bc
 
 # if defined (PARALLEL)
      call phi_3D_exch(Temp)
@@ -3394,6 +3420,79 @@
      DTemp0 = DTemp
 
      call eval_dens
+# endif
+!--------------------------------
+
+!--------------------------------
+!---------- added by HU,20210517
+# if defined (TRACERS)
+
+     ! read initial tracers field from an input file
+     if(INITIAL_TRAC) then
+       open(101,file='trac0.txt',status='old')
+       do k = 1,Kglob
+       do j = 1,Nglob
+         read(101,*) (TracG(i,j,k),i=1,Mglob)
+       enddo
+       enddo
+       close(101)
+
+# if defined (PARALLEL)
+       do j = Jbeg,Jend
+       do i = Ibeg,Iend
+         iglob = npx*(Mloc-2*Nghost)+i-Nghost
+         jglob = npy*(Nloc-2*Nghost)+j-Nghost
+         do k = Kbeg,Kend
+           Trac(i,j,k) = TracG(iglob,jglob,k-Nghost)
+         enddo
+       enddo
+       enddo
+# else
+       do j = Jbeg,Jend
+       do i = Ibeg,Iend
+         iglob = i-Nghost
+         jglob = j-Nghost
+         do k = Kbeg,Kend
+           Trac(i,j,k) = TracG(iglob,jglob,k-Nghost)
+         enddo
+       enddo
+       enddo
+# endif
+     else
+!       do i = Ibeg,Iend
+!       do j = Jbeg,Jend
+!       do k = Kbeg,Kend
+!         Trac(i,j,k) = (1.0-sigc(k))*0.01
+!       enddo
+!       enddo
+!       enddo
+       Trac = Zero
+     endif
+
+     ! boundary conditions
+     do j = Jbeg,Jend
+     do k = Kbeg,Kend
+       Trin_X0(j,k) = Trac(Ibeg,j,k)
+       Trin_Xn(j,k) = Trac(Iend,j,k)
+     enddo
+     enddo
+     call tracer_bc
+
+# if defined (PARALLEL)
+     call phi_3D_exch(Trac)
+# endif
+
+     do i = 1,Mloc
+     do j = 1,Nloc
+     do k = 1,Kloc
+       DTrac(i,j,k) = D(i,j)*Trac(i,j,k)
+     enddo
+     enddo
+     enddo     
+
+     DTrac0 = DTrac
+
+!     call eval_dens
 # endif
 !--------------------------------
 
