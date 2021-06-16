@@ -92,4 +92,35 @@ by HU
 · when initializing the temperature field, variables DTemp and DTEMP0 are supposed to be equal to D*Temp(0), instead of a constant 10.0.
   BUT, it doesn't matter now.
 
+UPDATE_00007
+by HU
+2021/05/19
+■ Update PASSIVE TRACERS module, that can simulate multi-component tracers field
+· new variables declarations in mod_global.F
+ -- change Trac,DTrac,DTrac0 from 3D-Array to 4D-Array
+ -- change Trin_X0,Trin_Xn from 2D-Array to 3D-Array
+ -- added the N_TRACERS (Integer Var.)
+· add the codes/instructions for initialization (initialize.F)
+ -- added the instructions of reading the value of N_TRACERS (Integer Var.) from input.txt
+ -- update the codes of allocating the space of Trac,DTrac,DTrac0,Trin_X0,Trin_Xn
+ -- change TracG from 3D-Array to 4D-Array (subroutine initial)
+ -- added a new string variable, n_str, in subroutine initial
+ -- update the codes/instructions for reading tracers field from .txt files (subroutine initial)
+· added 'call preview' at the before the time-stepping cycle (nhwave.F)
+· add the codes/instructions for output (subroutine preview, nhwave.F)
+ -- added a new string variable, n_str
+ -- update the codes/instructions for outputting tracers fields
+· update the codes/instructions for determining the fluxes boundary condition of tracers (subroutine flux_left_right_boundary)
+· add the codes/instructions for simulation of tracers (tracer.F)
+ -- a new subroutine eval_tracer(ISTEP) and a new subroutine tracer_bc(N_C), that are fit for simulation of multi-component tracers field
+ -- a new subroutine adv_tracer_hlpa(Flx,Fly,Flz,Phi,R5,N_C) 
+ -- a new subroutine flux_tracer_bc(N_C,Scalx,Scaly,Scalz)
 
+UPDATE_00008
+by HU
+2021/06/16
+■ Addition of the input option of EQU_STATE in initialize.F
+· add the variable declaration of EQU_STATE (String Var.) in mod_global.F
+· add the instructions for reading the value of LIMITER_TYPE from input.txt (initialize.F)
+ -- LIMITER_TYPE = 'KUNDSON-EkMAN' or 'UNESCO' or 'USER-DEFINED'
+· rewrite the eval_dens (in nhwave.F)

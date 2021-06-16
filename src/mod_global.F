@@ -46,6 +46,8 @@
      character(len=80) :: DEPTH_FILE
       ! add LIMITER_TYPE (HU, 20210427)
      character(len=80) :: LIMITER_TYPE
+      ! add EQU_STATE (HU, 20210616)
+     character(len=80) :: EQU_STATE
 
 # if defined (PARALLEL)
      integer :: myid,ier
@@ -99,9 +101,16 @@
 # endif
 
 !------ added by HU, 20210517
+!# if defined (TRACERS)
+!     real(SP), dimension(:,:,:), allocatable :: Trac,DTrac,DTrac0
+!     real(SP), dimension(:,:), allocatable :: Trin_X0,Trin_Xn 
+!# endif
+!---------------------------
+!------ added by HU, 20210519
 # if defined (TRACERS)
-     real(SP), dimension(:,:,:), allocatable :: Trac,DTrac,DTrac0
-     real(SP), dimension(:,:), allocatable :: Trin_X0,Trin_Xn 
+     real(SP), dimension(:,:,:,:), allocatable :: Trac,DTrac,DTrac0
+!     real(SP), dimension(:,:,:), allocatable :: Trac_t
+     real(SP), dimension(:,:,:), allocatable :: Trin_X0,Trin_Xn
 # endif
 !---------------------------
 
@@ -197,7 +206,8 @@
 ! variables
      integer :: It_Order,Ibeg,Iend,Iend1,Jbeg,Jend,Jend1,Kbeg,Kend,Kend1,PX,PY,IVturb,IHturb,Iws,  &
                 Mglob,Nglob,Kglob,Mloc,Nloc,Kloc,Mloc1,Nloc1,Kloc1,Icount,RUN_STEP,Ivgrd,SIM_STEPS,Ibot, &
-                NumFreq,NumDir,NSTAT,WaveheightID,ProdType
+                NumFreq,NumDir,NSTAT,WaveheightID,ProdType,N_TRACERS
+                ! add N_TRACERS (HU, 20210519)
      integer :: Bc_X0,Bc_Xn,Bc_Y0,Bc_Yn,Bc_Z0,Bc_Zn
      real(SP) :: dt,dt_old,dt_min,dt_max,dt_ini,dx,dy,Theta,CFL,VISCOUS_NUMBER,MinDep,TIME,TOTAL_TIME,Plot_Intv,  &
                  Screen_Intv,Screen_Count,Plot_Count,Visc,Cvs,Chs,Zob,Tke_min,  &

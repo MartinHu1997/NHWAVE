@@ -501,6 +501,24 @@
      WRITE(3,'(A12,L4)')'BAROTROPIC= ',BAROTROPIC
 # endif
 
+     ! equation of state
+      ! added by HU, 20210616------
+     CALL GET_STRING_VAL(EQU_STATE,FILE_NAME,'EQU_STATE',line,ierr)
+     IF(ierr==1)THEN
+# if defined (PARALLEL)
+       if(myid.eq.0) WRITE(3,'(A14,A50)')'EQU_STATE:', 'NOT DEFINED, USE DEFAULT'
+# else
+       WRITE(3,'(A14,A50)')'EQU_STATE:', 'NOT DEFINED, USE DEFAULT'
+# endif
+       EQU_STATE ='KUNDSON-EKMAN'
+     ENDIF
+# if defined (PARALLEL)
+     if(myid.eq.0) WRITE(3,'(A14,A50)')'EQU_STATE= ', EQU_STATE
+# else
+     WRITE(3,'(A14,A50)')'EQU_STATE= ', EQU_STATE
+# endif
+      !---------------------------
+
      ! numerical scheme
 
      CALL GET_STRING_VAL(HIGH_ORDER,FILE_NAME,'HIGH_ORDER',line,ierr)
@@ -540,9 +558,9 @@
      CALL GET_STRING_VAL(LIMITER_TYPE,FILE_NAME,'LIMITER_TYPE',line,ierr)
      IF(ierr==1)THEN
 # if defined (PARALLEL)
-       if(myid.eq.0) WRITE(3,'(A14,A50)')'LIMITER_TYPE', 'NOT DEFINED, USE DEFAULT'
+       if(myid.eq.0) WRITE(3,'(A14,A50)')'LIMITER_TYPE:', 'NOT DEFINED, USE DEFAULT'
 # else
-       WRITE(3,'(A14,A50)')'LIMITER_TYPE', 'NOT DEFINED, USE DEFAULT'
+       WRITE(3,'(A14,A50)')'LIMITER_TYPE:', 'NOT DEFINED, USE DEFAULT'
 # endif
        LIMITER_TYPE='VANLEER'
      ENDIF
@@ -1003,8 +1021,17 @@
 # endif
 
 # if defined (TRACERS)  
-   ! added by HU,20210517
+! added by HU,20210519
+     CALL GET_INTEGER_VAL(N_TRACERS,FILE_NAME,'N_TRACERS',line)
+! added by HU,20210517
      CALL GET_LOGICAL_VAL(INITIAL_TRAC,FILE_NAME,'INITIAL_TRAC',line)
+!-------- added by HU, 20210519
+# if defined (PARALLEL)
+     if(myid.eq.0) WRITE(3,'(A16,I3)')'N_TRACERS= ',N_TRACERS
+# else
+     WRITE(3,'(A16,I3)')'N_TRACERS= ',N_TRACERS
+# endif
+!------------------------------
 # endif
 
 # if defined (SEDIMENT)
@@ -1562,9 +1589,16 @@
 # endif
 
 !------------ added by HU, 20210517
+!# if defined (TRACERS)
+!     ALLOCATE(Trac(Mloc,Nloc,Kloc),DTrac(Mloc,Nloc,Kloc),DTrac0(Mloc,Nloc,Kloc))                                    
+!     ALLOCATE(Trin_X0(Nloc,Kloc),Trin_Xn(Nloc,Kloc))
+!# endif
+!----------------------
+!------------ added by HU, 20210519
 # if defined (TRACERS)
-     ALLOCATE(Trac(Mloc,Nloc,Kloc),DTrac(Mloc,Nloc,Kloc),DTrac0(Mloc,Nloc,Kloc))                                    
-     ALLOCATE(Trin_X0(Nloc,Kloc),Trin_Xn(Nloc,Kloc))
+     ALLOCATE(Trac(N_TRACERS,Mloc,Nloc,Kloc),DTrac(N_TRACERS,Mloc,Nloc,Kloc),DTrac0(N_TRACERS,Mloc,Nloc,Kloc))
+!     ALLOCATE(Trac_t(Mloc,Nloc,Kloc))
+     ALLOCATE(Trin_X0(N_TRACERS,Nloc,Kloc),Trin_Xn(N_TRACERS,Nloc,Kloc))
 # endif
 !----------------------
 
@@ -2592,8 +2626,12 @@
                  alpha0,L0,T,bl,hs0,ls0,ls1,ls2,lsx,lsx1,hslide,  &                   
                  eslide,xt,yt,zt,kb,kw,Slope,Xslide,SlideX1,SlideX2
      real(SP), dimension(Mglob,Nglob) :: EtaG
-     real(SP), dimension(Mglob,Nglob,Kglob) :: UG,VG,WG,SaliG,TempG,TracG
-                 ! add TempG (HU, 20210420); TracG (HU, 20210517)
+     real(SP), dimension(Mglob,Nglob,Kglob) :: UG,VG,WG,SaliG,TempG
+                 ! add TempG (HU, 20210420)
+     real(SP), dimension(N_TRACERS,Mglob,Nglob,Kglob) :: TracG
+                 ! add TracG (HU, 20210517); TracG transform 3D -> 4D (HU, 20210519)
+     character(len=2) :: n_str
+                 ! added by HU, 20210519
 
      ! simulation time
      TIME = Zero
@@ -2836,6 +2874,7 @@
 !---------------- added by HU, 20210517
 # if defined (TRACERS)
      Trac = Zero
+!     Trac_t = Zero  ! added by HU, 20210519
      DTrac = Zero
      DTrac0 = Zero
      Trin_X0 = Zero
@@ -3425,74 +3464,140 @@
 
 !--------------------------------
 !---------- added by HU,20210517
+!# if defined (TRACERS)
+!
+!     ! read initial tracers field from an input file
+!     if(INITIAL_TRAC) then
+!       open(101,file='trac0.txt',status='old')
+!       do k = 1,Kglob
+!       do j = 1,Nglob
+!         read(101,*) (TracG(i,j,k),i=1,Mglob)
+!       enddo
+!       enddo
+!       close(101)
+!
+!# if defined (PARALLEL)
+!       do j = Jbeg,Jend
+!       do i = Ibeg,Iend
+!         iglob = npx*(Mloc-2*Nghost)+i-Nghost
+!         jglob = npy*(Nloc-2*Nghost)+j-Nghost
+!         do k = Kbeg,Kend
+!           Trac(i,j,k) = TracG(iglob,jglob,k-Nghost)
+!         enddo
+!       enddo
+!       enddo
+!# else
+!       do j = Jbeg,Jend
+!       do i = Ibeg,Iend
+!         iglob = i-Nghost
+!         jglob = j-Nghost
+!         do k = Kbeg,Kend
+!          Trac(i,j,k) = TracG(iglob,jglob,k-Nghost)
+!         enddo
+!       enddo
+!       enddo
+!# endif
+!     else
+!       Trac = Zero
+!     endif
+!
+!     ! boundary conditions
+!     do j = Jbeg,Jend
+!     do k = Kbeg,Kend
+!       Trin_X0(j,k) = Trac(Ibeg,j,k)
+!       Trin_Xn(j,k) = Trac(Iend,j,k)
+!     enddo
+!     enddo
+!     call tracer_bc
+!
+!# if defined (PARALLEL)
+!     call phi_3D_exch(Trac)
+!# endif
+!
+!     do i = 1,Mloc
+!     do j = 1,Nloc
+!     do k = 1,Kloc
+!       DTrac(i,j,k) = D(i,j)*Trac(i,j,k)
+!     enddo
+!     enddo
+!     enddo     
+!
+!     DTrac0 = DTrac
+!
+!     call eval_dens
+!-------------------------------------------------------------
+!---------- added by HU,20210519
 # if defined (TRACERS)
-
      ! read initial tracers field from an input file
      if(INITIAL_TRAC) then
-       open(101,file='trac0.txt',status='old')
+       do n = 1,N_TRACERS
+       write(n_str,'(i2)') n
+       open(101,file='trac0_'//TRIM(ADJUSTL(n_str))//'.txt',status='old')
        do k = 1,Kglob
        do j = 1,Nglob
-         read(101,*) (TracG(i,j,k),i=1,Mglob)
+         read(101,*) (TracG(n,i,j,k),i=1,Mglob)
        enddo
        enddo
        close(101)
+       enddo
 
 # if defined (PARALLEL)
+       do n = 1,N_TRACERS
        do j = Jbeg,Jend
        do i = Ibeg,Iend
          iglob = npx*(Mloc-2*Nghost)+i-Nghost
          jglob = npy*(Nloc-2*Nghost)+j-Nghost
          do k = Kbeg,Kend
-           Trac(i,j,k) = TracG(iglob,jglob,k-Nghost)
+           Trac(n,i,j,k) = TracG(n,iglob,jglob,k-Nghost)
          enddo
        enddo
        enddo
+       enddo
 # else
+       do n = 1,N_TRACERS
        do j = Jbeg,Jend
        do i = Ibeg,Iend
          iglob = i-Nghost
          jglob = j-Nghost
          do k = Kbeg,Kend
-           Trac(i,j,k) = TracG(iglob,jglob,k-Nghost)
+           Trac(n,i,j,k) = TracG(n,iglob,jglob,k-Nghost)
          enddo
+       enddo
        enddo
        enddo
 # endif
      else
-!       do i = Ibeg,Iend
-!       do j = Jbeg,Jend
-!       do k = Kbeg,Kend
-!         Trac(i,j,k) = (1.0-sigc(k))*0.01
-!       enddo
-!       enddo
-!       enddo
        Trac = Zero
      endif
 
      ! boundary conditions
+     do n = 1,N_TRACERS
      do j = Jbeg,Jend
      do k = Kbeg,Kend
-       Trin_X0(j,k) = Trac(Ibeg,j,k)
-       Trin_Xn(j,k) = Trac(Iend,j,k)
+       Trin_X0(n,j,k) = Trac(n,Ibeg,j,k)
+       Trin_Xn(n,j,k) = Trac(n,Iend,j,k)
      enddo
      enddo
-     call tracer_bc
+     call tracer_bc(n)
+     enddo
 
 # if defined (PARALLEL)
-     call phi_3D_exch(Trac)
+     do n = 1,N_TRACERS
+     call phi_3D_exch(Trac(n,:,:,:))
+!     call phi_3D_exch(Trac)
+     enddo
 # endif
-
+     do n = 1,N_TRACERS
      do i = 1,Mloc
      do j = 1,Nloc
      do k = 1,Kloc
-       DTrac(i,j,k) = D(i,j)*Trac(i,j,k)
+       DTrac(n,i,j,k) = D(i,j)*Trac(n,i,j,k)
      enddo
      enddo
      enddo     
+     enddo
 
      DTrac0 = DTrac
-
-!     call eval_dens
 # endif
 !--------------------------------
 

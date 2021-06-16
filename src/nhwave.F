@@ -109,6 +109,7 @@
      call read_nesting_file
      TIME=TIME_COUPLING_1
 # endif
+     call preview     ! added by HU, 20210519 
 !
 !-----------------------------------------------------------------------------------------
 !
@@ -3324,6 +3325,8 @@
      character(len=80) :: FDIR=''
      character(len=80) :: FILE_NAME=''
      character(len=80) :: file=''
+     character(len=2) :: n_str
+                 ! added by HU, 20210519
 
      ! file number
      Icount = Icount+1
@@ -3483,11 +3486,21 @@
 # endif
 
 # if defined (TRACERS)
-   !added by HU, 20210517
+!-------------- added by HU, 20210517
+!     if(OUT_Tr) then
+!       file=TRIM(FDIR)//'Tr_'//TRIM(FILE_NAME)
+!       call putfile3D(file,Trac)
+!     endif
+!-------------------------
+!-------------- added by HU, 20210519
      if(OUT_Tr) then
-       file=TRIM(FDIR)//'Tr_'//TRIM(FILE_NAME)
-       call putfile3D(file,Trac)
+     do i = 1,N_TRACERS
+       write(n_str,'(i2)') i
+       file=TRIM(FDIR)//'Tr'//TRIM(ADJUSTL(n_str))//'_'//TRIM(FILE_NAME)
+       call putfile3D(file,Trac(i,:,:,:))
+     enddo
      endif
+!-------------------------
 # endif
 
 # if defined (POROUSMEDIA)
@@ -5665,8 +5678,15 @@
 # endif
 
 !------------ added by HU, 20210517
+!# if defined (TRACERS)
+!       Trin_X0(j,k) = 0.0
+!# endif
+!-----------------
+!------------ added by HU, 20210519
 # if defined (TRACERS)
-       Trin_X0(j,k) = 0.0
+       do n = 1,N_TRACERS
+         Trin_X0(n,j,k) = 0.0
+       enddo
 # endif
 !-----------------
 
@@ -5751,8 +5771,15 @@
 # endif
 
 !------------ added by HU, 20210517
+!# if defined (TRACERS)
+!       Trin_Xn(j,k) = 0.0
+!# endif
+!-----------------
+!------------ added by HU, 20210519
 # if defined (TRACERS)
-       Trin_Xn(j,k) = 0.0
+       do n = 1,N_TRACERS
+         Trin_Xn(n,j,k) = 0.0
+       enddo
 # endif
 !-----------------
 
@@ -7936,12 +7963,12 @@ endif
     endif
 # endif
 !------ added by HU, 20210517
-# if defined (TRACERS)
-    if(IVAR==7) then
-      Scal_X0 = Trin_X0
-      Scal_Xn = Trin_Xn
-    endif
-# endif
+!# if defined (TRACERS)
+!    if(IVAR==7) then
+!      Scal_X0 = Trin_X0
+!      Scal_Xn = Trin_Xn
+!    endif
+!# endif
 !---------------------------
 
     ! left and right side
@@ -12819,7 +12846,8 @@ endif
     integer,dimension(MPI_STATUS_SIZE,1) :: status
     integer,dimension(NumP) :: npxs,npys
 # endif
-    real(SP) :: DELTZ,TF,SF,RHOF,HMAX,ETAMAX
+    real(SP) :: DELTZ,TF,SF,RHOF,HMAX,ETAMAX,RHOO,A_RHO,B_RHO
+      ! add RHOO,A_RHO,B_RHO (HU, 20210616)
     real(SP) :: tmp1,tmp2,myvar
     integer :: I,J,K,isum,jk,iglob,jglob,kk,n,len,nreq,NKloc
 
@@ -12828,9 +12856,14 @@ endif
     DO J = 1,NLOC
     DO I = 1,MLOC
       IF(Mask(I,J)==0) cycle
+      
 # if defined (SALINITY)
       TF = Temp(I,J,K)
       SF = Sali(I,J,K)
+      
+      ! added by HU, 20210616------
+     if (EQU_STATE(1:3) == 'KUN') then
+        ! Kundson-Ekman Classical Equation
       RHOF = SF*SF*SF*6.76786136E-6_SP-SF*SF*4.8249614E-4_SP+ &
            SF*8.14876577E-1_SP-0.22584586E0_SP
       RHOF = RHOF*(TF*TF*TF*1.667E-8_SP-TF*TF*8.164E-7_SP+ &
@@ -12840,6 +12873,29 @@ endif
            SF*8.14876577E-1_SP+3.895414E-2_SP)
       RHOF = RHOF-(TF-3.98_SP)**2*(TF+283.0_SP)/(503.57_SP*(TF+67.26_SP))
       Rho(I,J,K) = Rho0+RHOF
+     elseif (EQU_STATE(1:3) == 'UNE') then
+        ! UNESCO formulation
+      RHOO = 999.842594 +  6.793952E-2 * TF - 9.095290E-3 * TF*TF + &
+           1.001685E-4 * TF*TF*TF - 1.120083E-6 * TF*TF*TF*TF + 6.536332E-9 * TF*TF*TF*TF*TF
+      A_RHO = 8.24493E-1 - 4.0899E-3 * TF + 7.6438E-5 * TF*TF - 8.2467E-7 * TF*TF*TF + 5.3875E-9 * TF*TF*TF*TF
+      B_RHO = -5.72466E-3 + 1.0227E-4 * TF - 1.6546E-6 * TF*TF
+      Rho(I,J,K) = RHOO + + A_RHO * SF + B_RHO * SF**1.5 + 4.8314E-4 * SF**2
+     elseif (EQU_STATE(1:3) == 'USE') then
+        ! User Defined
+       Rho(I,J,K) = 999.972 * (1 + 0.75E-3 * SF )
+     endif
+      !---------------------------
+                
+!      RHOF = SF*SF*SF*6.76786136E-6_SP-SF*SF*4.8249614E-4_SP+ &
+!           SF*8.14876577E-1_SP-0.22584586E0_SP
+!      RHOF = RHOF*(TF*TF*TF*1.667E-8_SP-TF*TF*8.164E-7_SP+ &
+!           TF*1.803E-5_SP)
+!      RHOF = RHOF+1.-TF*TF*TF*1.0843E-6_SP+TF*TF*9.8185E-5_SP-TF*4.786E-3_SP
+!      RHOF = RHOF*(SF*SF*SF*6.76786136E-6_SP-SF*SF*4.8249614E-4_SP+  &
+!           SF*8.14876577E-1_SP+3.895414E-2_SP)
+!      RHOF = RHOF-(TF-3.98_SP)**2*(TF+283.0_SP)/(503.57_SP*(TF+67.26_SP))
+!      Rho(I,J,K) = Rho0+RHOF
+      
 # endif
 
 # if defined (SEDIMENT)
@@ -13016,9 +13072,8 @@ endif
     subroutine sinter(X,A,Y,B,M1,N1)
 !------------------------------------------------------------------------------
 !                                                                              
-!  this subroutine linearly interpolates and extrapolates an                             
-!  array b.
-!                                                                              
+!  this subroutine linearly interpolates and extrapolates an array b.
+!                                                                          
 !  x(m1) must be ascending                                                    
 !  a(x) given function                                                         
 !  b(y) found by linear interpolation and extrapolation                        
@@ -13147,8 +13202,8 @@ endif
       enddo
       enddo
 
-      ! interpolate into physical z levels
-      if(Ivgrd==1) then  
+      ! interpolate into physical z levels  (NOTE: hmax is max still water depth)
+      if(Ivgrd==1) then
         deltz = (hmax+etamax)/float(kbbm1)
         do k = 1,kbb
           phy_z(k) = (float(k)-1.0)*deltz-hmax

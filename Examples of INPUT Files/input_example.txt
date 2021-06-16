@@ -58,8 +58,10 @@ INITIAL_SALI = T
 INITIAL_TEMP = F
 
 ! -------------------PASSIVE TRACERS ---------------------------
-! if INITIAL_TRAC = T, need file trac0.txt (added by HU, 20210517)
+! if INITIAL_TRAC = T, need file trac0_N.txt. And N=1,2... N_TRACERS.
+! (added by HU, 202105)
 INITIAL_TRAC = T
+N_TRACERS = 2
 
 ! -----------------HOT START----------------------------------
 HOTSTART = F
@@ -114,7 +116,12 @@ slat = 0.0
 
 ! ---------------------BAROTROPIC--------------------------
 ! if barotropic run, set BAROTROPIC = T
+! EQU_STATE: equations of state; (added by HU, 20210616)
+!                   = "KUNDSON-EkMAN" : KUNDSON-EkMAN Classical Equation (DEFAULT);
+!                   = "UNESCO" : UNESCO Formulation;
+!                   = "USER-DEFINED" : 999.972*(1+0.75E-3*Salinity).
 BAROTROPIC = F
+EQU_STATE = KUNDSON-EkMAN
 
 ! ----------------------NON-HYDRO---------------------------
 ! if non-hydrostatic simulation
