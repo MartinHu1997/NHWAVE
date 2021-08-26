@@ -7,7 +7,6 @@
 UPDATE_00001
 by HU
 2021/04/15
-
 ■ Additions: added a new variable OUT_Te (Logical Var.) indicating the outputting process of Temperature Field Data
 · add the variable declaration of OUT_Te in mod_global.F
 · add the instructions of reading the value of OUT_Te from input.txt (initialize.F)
@@ -59,6 +58,7 @@ UPDATE_00005
 by HU
 2021/05/15
 ■ Adding a new simulating case, named 'Lock-Exchange_2D', in filefold 'new examples cases by HU'
+//
 
 UPDATE_00006
 by HU
@@ -91,6 +91,7 @@ by HU
 ■ find a bug in subroutine initial from initial.F
 · when initializing the temperature field, variables DTemp and DTEMP0 are supposed to be equal to D*Temp(0), instead of a constant 10.0.
   BUT, it doesn't matter now.
+//
 
 UPDATE_00007
 by HU
@@ -115,6 +116,7 @@ by HU
  -- a new subroutine eval_tracer(ISTEP) and a new subroutine tracer_bc(N_C), that are fit for simulation of multi-component tracers field
  -- a new subroutine adv_tracer_hlpa(Flx,Fly,Flz,Phi,R5,N_C) 
  -- a new subroutine flux_tracer_bc(N_C,Scalx,Scaly,Scalz)
+//
 
 UPDATE_00008
 by HU
@@ -124,6 +126,7 @@ by HU
 · add the instructions for reading the value of EQU_STATE from input.txt (initialize.F)
  -- EQU_STATE = 'KUNDSON-EkMAN' or 'UNESCO' or 'USER-DEFINED'
 · rewrite the eval_dens (in nhwave.F)
+//
 
 UPDATE_00009
 by HU
@@ -138,3 +141,4 @@ by HU
 · LIMITER_TYPE = 'MSUP': Minmod-Superbee Limiter;
 ■ Addition a if-else-end instructions for the simulations in 2-D vertical domain (subroutine diffusion, nhwave.F)
 · at the end of subroutine diffusion, we added: if (Nglob == 1) then to make y-related diffusion terms equal to Zero( Diffxy = Diffyx = Diffyy = Diffyz = Diffzy = 0 ).
+//
