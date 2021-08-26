@@ -96,8 +96,8 @@ LIMITER_TYPE = SUPERBEE
 ! Ibot = 1: given the drag coefficient Cd0
 ! Ibot = 2: given the bottom roughness height Zob
 Ibot = 1
-Cd0 = 0.006
-Zob = 0.0001
+Cd0 = 0.0000
+Zob = 0.0000
 Dfric_Min = 0.0
 
 ! ---------------------WIND STRESS--------------------------

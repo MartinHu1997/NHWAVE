@@ -121,6 +121,20 @@ by HU
 2021/06/16
 ■ Addition of the input option of EQU_STATE in initialize.F
 · add the variable declaration of EQU_STATE (String Var.) in mod_global.F
-· add the instructions for reading the value of LIMITER_TYPE from input.txt (initialize.F)
- -- LIMITER_TYPE = 'KUNDSON-EkMAN' or 'UNESCO' or 'USER-DEFINED'
+· add the instructions for reading the value of EQU_STATE from input.txt (initialize.F)
+ -- EQU_STATE = 'KUNDSON-EkMAN' or 'UNESCO' or 'USER-DEFINED'
 · rewrite the eval_dens (in nhwave.F)
+
+UPDATE_00009
+by HU
+2021/08/26
+■ Addition of the parameters of EQU_STATE (subroutine eval_dens, nhwave.F)
+· add EQU_STATE = 'SAL' for the case where the density is only depended on salinity
+  (density = reference density * (1.0 + beta * salinity))
+■ Addition of some new slope limiter options (LIMITER_TYPE) for reconstruction of variables (function LIMITER, nhwave.F)
+· LIMITER_TYPE = 'MONO': Monotonized central-difference Limiter;
+· LIMITER_TYPE = 'NMIN': Another Minmod Limiter [ limiter(A, B) = B * max(0, min(p*A/B, 1.0), min(A/B, p)) and p∈[1,2] ];
+· LIMITER_TYPE = 'VANA': van Albada Limiter;
+· LIMITER_TYPE = 'MSUP': Minmod-Superbee Limiter;
+■ Addition a if-else-end instructions for the simulations in 2-D vertical domain (subroutine diffusion, nhwave.F)
+· at the end of subroutine diffusion, we added: if (Nglob == 1) then to make y-related diffusion terms equal to Zero( Diffxy = Diffyx = Diffyy = Diffyz = Diffzy = 0 ).

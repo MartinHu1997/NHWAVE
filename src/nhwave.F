@@ -2899,21 +2899,77 @@
      use global, only: SP,Zero,One,Small,LIMITER_TYPE
                      ! add LIMITER_TYPE (HU, 20210427)
      IMPLICIT NONE
+     real(SP), parameter :: phieby = 2.0
+       ! add phieby: the limitation of Another MINMOD Limiter , range: [1,2] (HU, 202108)
      REAL(SP),INTENT(IN) :: A,B
+     REAL(SP) :: RR
+       ! add RR (HU, 20210618)
      REAL(SP) :: LIMITER
 
-      ! added by HU, 20210427------
-     if (LIMITER_TYPE(1:3) == 'VAN') then
-        ! Van Leer Limiter
-        LIMITER=(A*ABS(B)+ABS(A)*B)/(ABS(A)+ABS(B))
-     elseif (LIMITER_TYPE(1:3) == 'MIN') then
-        ! Minmod Limiter
-        LIMITER=max(Zero,min(A,B))
-     elseif (LIMITER_TYPE(1:3) == 'SUP') then
+     RR = B/A
+      !RR = A/B
+     
+! added by HU, 20210618-----------------------
+     select case(LIMITER_TYPE(1:4))
+     case('VANL')
+       ! Van Leer Limiter (Default)
+       LIMITER=(A*ABS(B)+ABS(A)*B)/(ABS(A)+ABS(B))
+     case('MINM')
+       ! Minmod Limiter
+       LIMITER=max(Zero,min(A,B))
+     case('SUPE')
         ! Superbee Limiter
         LIMITER=SIGN(One,B)*MAX(Zero,MIN(2.0*ABS(B),SIGN(One,B)*A), &
                 MIN(ABS(B),2.0*SIGN(One,B)*A))
-     endif
+     case('MONO')
+        ! Monotonized central-difference Limiter
+        if (SIGN(One,A)==SIGN(One,B) .and. SIGN(One,A)==SIGN(One,A+B) .and. SIGN(One,A+B)==SIGN(One,B)) then
+             LIMITER = SIGN(One,A) * MAX(Zero, MIN(0.5*ABS(A+B),2.0*ABS(A),2.0*ABS(B)))
+        else
+             LIMITER = Zero
+        end if
+     case('NMIN')
+        ! Another Minmod Limiter
+        LIMITER = B * MAX(Zero, MIN(phieby*A/B, One), MIN(A/B, phieby))
+     case('VANA')
+        ! van Albada Limiter
+        if (SIGN(One,A) /= SIGN(One,B)) then
+          LIMITER = Zero
+        else
+          LIMITER = ((A*A + Small) * B + (B*B + Small) * A) / (A*A + B*B + 2.0_SP * Small )
+        end if
+     case('MSUP')
+        ! Minmod-Superbee Limiter
+        LIMITER = B * MAX(Zero, MIN(2.0_SP, MIN(A/(3.0_SP * B)+2.0/3.0, 2.0*A/B )) )
+     case('NSUP')
+        ! Just for testing
+        if (SIGN(One,A) /= SIGN(One,B)) then
+          LIMITER = Zero
+        elseif (0.5*abs(A)<=abs(B) .and. abs(B)<=2.0*abs(A)) then
+          LIMITER = (1.0_SP-1.0e-4_SP) * sign(One,A) * max(abs(A),abs(B))
+        else
+          LIMITER = (2.0_SP-1.0e-4_SP) * sign(One,A) * min(abs(A),abs(B))
+        end if  
+!        LIMITER=SIGN(One,B)*MAX(Zero,MIN((2.0_SP-Small)*ABS(B),SIGN(One,B)*A), &
+!                MIN(ABS(B),(2.0_SP-Small)*SIGN(One,B)*A))        
+     case default
+       write(3,*) 'Please Input the Correct Form of the Parameter (LIMITER_TYPE)!!'
+       stop
+     end select
+! end, 20210618------------------------------
+
+      ! added by HU, 20210427------
+!     if (LIMITER_TYPE(1:3) == 'VAN') then
+!        ! Van Leer Limiter
+!        LIMITER=(A*ABS(B)+ABS(A)*B)/(ABS(A)+ABS(B))
+!     elseif (LIMITER_TYPE(1:3) == 'MIN') then
+!        ! Minmod Limiter
+!        LIMITER=max(Zero,min(A,B))
+!     elseif (LIMITER_TYPE(1:3) == 'SUP') then
+!        ! Superbee Limiter
+!        LIMITER=SIGN(One,B)*MAX(Zero,MIN(2.0*ABS(B),SIGN(One,B)*A), &
+!                MIN(ABS(B),2.0*SIGN(One,B)*A))
+!     endif
       !---------------------------
      
 !     ! minmod limiter
@@ -2928,7 +2984,7 @@
 
      RETURN
      END FUNCTION LIMITER
- 
+  
      subroutine wave_average
 !---------------------------------------------------
 !    Estimate wave averaged quantities
@@ -7218,10 +7274,14 @@ endif
      enddo
      enddo
      enddo
-     !!just 2d later should be deleted
-     !Diffxy = zero
-     !Diffyx = zero; Diffyy = zero; Diffyz = zero
-     !Diffzy = zero 
+!-added by HU, 202107-------------------------------
+     !just 2d later should be deleted
+     if (Nglob == 1) then       
+     Diffxy = zero
+     Diffyx = zero; Diffyy = zero; Diffyz = zero
+     Diffzy = zero 
+     endif
+!-----------------------------------------------
     end subroutine diffusion
 
      subroutine diffusion_old
@@ -12879,10 +12939,12 @@ endif
            1.001685E-4 * TF*TF*TF - 1.120083E-6 * TF*TF*TF*TF + 6.536332E-9 * TF*TF*TF*TF*TF
       A_RHO = 8.24493E-1 - 4.0899E-3 * TF + 7.6438E-5 * TF*TF - 8.2467E-7 * TF*TF*TF + 5.3875E-9 * TF*TF*TF*TF
       B_RHO = -5.72466E-3 + 1.0227E-4 * TF - 1.6546E-6 * TF*TF
-      Rho(I,J,K) = RHOO + + A_RHO * SF + B_RHO * SF**1.5 + 4.8314E-4 * SF**2
+      Rho(I,J,K) = RHOO + A_RHO * SF + B_RHO * SF**1.5 + 4.8314E-4 * SF**2
      elseif (EQU_STATE(1:3) == 'USE') then
         ! User Defined
-       Rho(I,J,K) = 999.972 * (1 + 0.75E-3 * SF )
+       Rho(I,J,K) = 999.972_SP * (1.0_SP + 0.75E-3_SP * SF )
+     elseif (EQU_STATE(1:3) == 'SAL') then
+       Rho(I,J,K) = 1000.0_SP * (1.0_SP + 1.0E-3_SP * SF )
      endif
       !---------------------------
                 
