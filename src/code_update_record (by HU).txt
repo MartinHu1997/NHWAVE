@@ -141,4 +141,3 @@ by HU
 · LIMITER_TYPE = 'MSUP': Minmod-Superbee Limiter;
 ■ Addition a if-else-end instructions for the simulations in 2-D vertical domain (subroutine diffusion, nhwave.F)
 · at the end of subroutine diffusion, we added: if (Nglob == 1) then to make y-related diffusion terms equal to Zero( Diffxy = Diffyx = Diffyy = Diffyz = Diffzy = 0 ).
-//
