@@ -12,7 +12,9 @@ Email: hulihan@hhu.edu.cn
 ================================================================
 
 ■ NOTICE: Debugs for Vegetation Model (Dec 7, 2021)
-· More reasonable parameter definitions of 'Cfk' and 'Cfe' are applied, which can avoid the conflicts between global and local variables.
+
+· A more reasonable parameter definition of 'Cfk' and 'Cfe' is applied, which can avoid the conflicts between global and local variables.
+
 · To fix a bug caused by confusion of variable names. We replace the variable 'Vegbv' with 'StemD' at two places (in the subroutine kepsilon_3D of nhwave.F)
 
 NOW, the Vegetable Model can be normally compiled!
