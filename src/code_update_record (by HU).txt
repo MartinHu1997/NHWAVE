@@ -141,3 +141,15 @@ by HU
 · LIMITER_TYPE = 'MSUP': Minmod-Superbee Limiter;
 ■ Addition a if-else-end instructions for the simulations in 2-D vertical domain (subroutine diffusion, nhwave.F)
 · at the end of subroutine diffusion, we added: if (Nglob == 1) then to make y-related diffusion terms equal to Zero( Diffxy = Diffyx = Diffyy = Diffyz = Diffzy = 0 ).
+//
+
+UPDATE_00010
+by HU
+2021/12/07
+■ Debug (Vegetation Model)
+· replace the variable 'Vegbv' with 'StemD' at two places (in the subroutine kepsilon_3D of nhwave.F)
+ -- 'Vegbv' represents the Stem Size and was no longer used now. 
+     In this program, 'StemD' represents the Stem Size
+· The local variables, 'cfk' and 'cfe', are no longer defined in the subroutines kepsilon and kepsilon_3D now (nhwave.F)
+ -- 'Cfk' and 'Cfe' are required for input file now (input.txt)
+//

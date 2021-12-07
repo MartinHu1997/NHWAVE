@@ -10203,7 +10203,8 @@ endif
     real(SP), dimension(:,:,:), allocatable :: R5,DelzR,Tke_Old,Eps_Old,DUfs,DVfs,Wfs
     real(SP), dimension(:,:), allocatable :: VelGrad,ReynoldStress,Vorticity
     real(SP), dimension(:), allocatable :: Acoef,Bcoef,Ccoef,Xsol,Rhs0
-    real(SP) :: c1e,c2e,c3e,cmiu,cfk,cfe,Umag,Zdis,X0,Xa,Xn,FricU,Sche,Schk
+    !real(SP) :: c1e,c2e,c3e,cmiu,cfk,cfe,Umag,Zdis,X0,Xa,Xn,FricU,Sche,Schk
+    real(SP) :: c1e,c2e,c3e,cmiu,Umag,Zdis,X0,Xa,Xn,FricU,Sche,Schk  ! to delete the cfk and cfe (by HU, 20211206)
     real(SP) :: smax,dmax,c_d,c_1,c_2,c_3,delta_nm,Tkeb,Epsb
     real(SP) :: S11,S22,S33,S12,S13,S23
     integer :: i,j,k,n,m,l,g,IVAR,Iter,Nlen,ii
@@ -10249,8 +10250,8 @@ endif
 !       c2e = 1.92
        c3e = 0.0
        cmiu = 0.085
-       cfk = 1.0
-       cfe = 1.33
+!       cfk = 1.0
+!       cfe = 1.33
        Sche = 0.72
        Schk = 0.72
     else
@@ -10259,8 +10260,8 @@ endif
 !     c3e = -1.4
        c3e = 0.0
        cmiu = 0.09
-       cfk = 1.0
-       cfe = 1.33
+!       cfk = 1.0
+!       cfe = 1.33
        Sche = 1.3
        Schk = 1.0
     endif
@@ -10518,15 +10519,18 @@ endif
         if(trim(Veg_Type)=='RIGID') then ! rigid vegetation                                                 
           if(sigc(k)*D(i,j)<=VegH) then
             Umag = sqrt(U(i,j,k)**2+V(i,j,k)**2+W(i,j,k)**2)
-            Prod_v(i,j,k) = 0.5*Vegbv*VegDens*VegDrag*Umag**3
+            Prod_v(i,j,k) = 0.5*StemD*VegDens*VegDrag*Umag**3    ! Debug (By HU, 20211206): to replace the variable 'Vegbv' with 'StemD'
+            ! Prod_v(i,j,k) = 0.5*Vegbv*VegDens*VegDrag*Umag**3  ! error: No 'Vegbv' in this program.
           else
             Prod_v(i,j,k) = 0.0
           endif
         else  ! flexible vegetation                                                                          
           if(sigc(k)*D(i,j)<=FVegH(i,j)) then
             Umag = sqrt(U(i,j,k)**2+V(i,j,k)**2+W(i,j,k)**2)
-            Prod_v(i,j,k) = 0.5*Vegbv*VegDens*VegDrag*foliage(i,j)*  &                                       
-                    VegH/FVegH(i,j)*Umag**3
+            Prod_v(i,j,k) = 0.5*StemD*VegDens*VegDrag*foliage(i,j)*  & 
+                     VegH/FVegH(i,j)*Umag**3                            ! Debug (By HU, 20211206): to replace the variable 'Vegbv' with 'StemD'
+            !Prod_v(i,j,k) = 0.5*Vegbv*VegDens*VegDrag*foliage(i,j)*  &                                       
+            !        VegH/FVegH(i,j)*Umag**3                            ! error: No 'Vegbv' in this program.
           else
             Prod_v(i,j,k) = 0.0
           endif
