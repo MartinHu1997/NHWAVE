@@ -160,6 +160,11 @@ ISOLVER = 2
 ITMAX = 1000
 TOL = 1.e-8
 
+! USE Acceleration Method (added by HU, 202209)
+ACC_METHOD = 1
+! ACC_METHOD=1 --> PDI Method. PDI_INT is needed
+PDI_INT = 4
+
 ! ------------------PERIODIC BC------------------------------------
 ! periodic=.true. : periodic boundary condition in y direction
 ! Notice if periodic=.true., Nglob must be power-of-two.

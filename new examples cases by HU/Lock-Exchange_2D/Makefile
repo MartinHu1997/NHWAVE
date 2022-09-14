@@ -9,7 +9,7 @@
 #--------------------------------------------------------------------------
          FLAG_1 = -DDOUBLE_PRECISION
          FLAG_2 = -DPARALLEL
-         FLAG_3 = -DLANDSLIDE
+#         FLAG_3 = -DLANDSLIDE
          FLAG_4 = -DSALINITY
          FLAG_5 = -DTEMPERATURE
 #         FLAG_6 = -DBUBBLE

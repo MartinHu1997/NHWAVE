@@ -329,10 +329,20 @@
 # if defined (PARALLEL)
      if(myid.eq.0) write(*,*) 'Simulation takes',tend-tbegin,'seconds'
      if(myid.eq.0) write(3,*) 'Simulation takes',tend-tbegin,'seconds'
+!------ added by HU, 20220811
+!      if(myid.eq.0) write(*,*) 'Poisson Solver takes',time_poi,'seconds' 
+!      if(myid.eq.0) write(3,*) 'Poisson Solver takes',time_poi,'seconds'
+!---------------------------
 # else
      write(*,*) 'Simulation takes',tend-tbegin,'seconds'
      write(3,*) 'Simulation takes',tend-tbegin,'seconds'
+!------ added by HU, 20220811
+!      write(*,*) 'Poisson Solver takes',time_poi,'seconds' 
+!      write(3,*) 'Poisson Solver takes',time_poi,'seconds'
+!---------------------------
 # endif
+      write(*,*) 'WorkThread',myid,'--Poisson Solver takes',time_poi,'seconds' 
+      write(3,*) 'WorkThread',myid,'--Poisson Solver takes',time_poi,'seconds'
 
 # if defined (PARALLEL)
      call MPI_FINALIZE(ier)
@@ -558,6 +568,7 @@
      real(SP),dimension(:,:),allocatable :: R1,qz
      real(SP),dimension(:,:,:),allocatable :: R2,R3,R4
      real(SP) :: dedt,Umag,Dz1,Cdrag,Ustar2,Wtop,Wbot
+      real(SP) :: tbegin,tend     ! added by HU, 20220811
      integer :: i,j,k,n,Ista,Nlen
      ! added by Cheng for limiting the maximum Froude number
 # if defined(FROUDE_CAP)
@@ -1198,9 +1209,24 @@
        ! interpolate velocity into vertical faces
        call interpolate_velocity_to_faces
 
-       ! solve dynamic pressure 
+       ! solve dynamic pressure
+       call wall_time_secs(tbegin)       ! added by HU, 20220811
+       pertime_poi = Zero
+# if defined (PRESSUREACC)
+      if(ACC_METHOD==1) then             ! added by HU, 20220811
+           call poisson_solver_pdi    
+      elseif(ACC_METHOD==2)
+          call poisson_solver_sub
+      else
+          call poisson_solver
+       endif
+# else
        call poisson_solver
-
+# endif
+      call wall_time_secs(tend)   ! added by HU, 20220811
+      pertime_poi = tend - tbegin
+      time_poi = time_poi + (tend - tbegin)
+            
        ! correct velocity field  
        call projection_corrector
      endif
@@ -3948,11 +3974,11 @@
      if(dt<dt_min) then
 # if defined (PARALLEL)
        if(myid.eq.0) then
-         write(3,*) 'time step too small !!',dt,dt_courant,dt_viscous
+         write(3,*) 'time step too small !!',dt,dt_growth,dt_courant,dt_viscous
          stop
        endif
 # else
-       write(3,*) 'time step too small !!',dt,dt_courant,dt_viscous
+       write(3,*) 'time step too small !!',dt,dt_growth,dt_courant,dt_viscous
        stop
 # endif
      endif
@@ -5675,10 +5701,48 @@
      if(WaveMaker(1:7)=='FLUX_LR') then
        call flux_left_right_boundary
      endif
-
+       
+!------------ added by HU, 20220308      
+     if(WaveMaker(1:7)=='FLOW_LE') then
+       call flow_discharge_left
+     endif
+!------------
+       
      end subroutine update_wave_bc 
 
+     subroutine flow_discharge_left
+!-----------------------------------------------------------   
+!    This subroutine is used to specify the flow discharge 
+!                                    at left boundary                                         
+!    Called by 
+!       update_wave_bc 
+!    Last update: 08/03/2022, Lihan Hu
+!-----------------------------------------------------------
+     use global
+     implicit none
+     integer :: j,k,n
+     real(SP) :: Zlev1,Zlev2,Uavg_Left,Ufric,sintep,UU,  &
+                 FluxL,myvar,Ramp,Cg
+# if defined (SEDIMENT)
+     real(SP) :: Sinterp
+     real(SP) :: Tim0(8),Cin0(8)
+# endif
+     Uavg_Left = 0.115
 
+     FluxL = 0.0
+
+     if(TRamp>0.0) then
+       Ramp = tanh(TIME/TRamp)
+     else
+       Ramp = 1.0
+     endif
+       
+       
+       
+     return
+     end subroutine flow_discharge_left
+       
+       
      subroutine flux_left_right_boundary
 !-----------------------------------------------------------   
 !    This subroutine is used to specify left/right boundary                                         
@@ -13496,13 +13560,13 @@ endif
 
     ! save flag in the previous step
     set_flag_old = set_flag
-# if defined (OBSTACLE)
+# if defined (DEFORMABLESLIDE)
     set_flag_gs_old = set_flag_gs
 # endif
 
     ! default is fluid
     set_flag = 0
-# if defined (OBSTACLE)
+# if defined (DEFORMABLESLIDE)
     set_flag_gs = 0
 # endif
 
@@ -13516,7 +13580,7 @@ endif
       ! obstacle #1 x<=4.5 & y<=13.4
       if(xc(i)<=4.476.and.yc(j)<=13.4) then
         set_flag(i,j,k) = 1
-# if defined (OBSTACLE)
+# if defined (DEFORMABLESLIDE)
         if (k==1) then
 		  set_flag_gs(i,j) = 1
 		endif
@@ -13526,7 +13590,7 @@ endif
       ! obstacle #2 x<=4.5 & y>=14.6
       if(xc(i)<=4.476.and.yc(j)>=14.6) then
         set_flag(i,j,k) = 1
-# if defined (OBSTACLE)
+# if defined (DEFORMABLESLIDE)
         if (k==1) then
 		  set_flag_gs(i,j) = 1
 		endif
@@ -13541,7 +13605,7 @@ endif
     set_dist_x = 1.e+20
     set_dist_y = 1.e+20
     set_dist_z = 1.e+20
-# if defined (OBSTACLE)
+# if defined (DEFORMABLESLIDE)
     set_dist_x_gs = 1.e+20
     set_dist_y_gs = 1.e+20
     set_dist_z_gs = 1.e+20
@@ -13580,7 +13644,7 @@ endif
 		  
       endif
 	  
-# if defined (OBSTACLE)
+# if defined (DEFORMABLESLIDE)
       ! loop over all slide cells
       if(set_flag_gs(i,j)==0.and.k==1) then
 	  
@@ -13797,6 +13861,8 @@ endif
     enddo
 
     ! y-direction
+    if(Nglob /= 1) then
+
     do k = Kbeg,Kend
     do j = Jbeg,Jend
     do i = Ibeg,Iend
@@ -13911,7 +13977,9 @@ endif
     enddo
     enddo
     enddo
- 
+
+    endif  !if(Nglob /= 1)
+
     ! z-direction
     do k = Kbeg,Kend
     do j = Jbeg,Jend

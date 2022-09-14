@@ -591,15 +591,55 @@
      CALL GET_INTEGER_VAL(isolver,FILE_NAME,'ISOLVER',line)
      CALL GET_INTEGER_VAL(itmax,FILE_NAME,'ITMAX',line)
      CALL GET_Float_VAL(tol,FILE_NAME,'TOL',line)
+# if defined (PRESSUREACC)
+     CALL GET_INTEGER_VAL(ACC_METHOD,FILE_NAME,'ACC_METHOD',line)
+      if(ACC_METHOD==1) then   
+          CALL GET_INTEGER_VAL(PDI_INT,FILE_NAME,'PDI_INT',line)
+          if(mod(Kglob,PDI_INT).ne.0 .or. PDI_INT==0) then
+              if(myid.eq.0) WRITE(3,*) 'Please Input an Appropriate Value of PDI_INT'
+              stop
+          endif
+      elseif(ACC_METHOD==2) then
+          CALL GET_INTEGER_VAL(NUM_PSUB,FILE_NAME,'NUM_PSUB',line)
+          if(NUM_PSUB<1 .or. NUM_PSUB>Kglob) then
+              if(myid.eq.0) WRITE(3,*) 'Please Input an Appropriate Value of NUM_PSUB(Number of pressure sub-grids)'
+              stop
+          endif
+          open(8001,file='pressure_sub.txt',status='old')
+          allocate(n_psub(NUM_PSUB))
+          do i = 1,NUM_PSUB
+              read(8001,*)  n_psub(k)
+          enddo
+          close(8001)
+      endif
+# endif
+
 # if defined (PARALLEL)
      if(myid.eq.0) WRITE(3,'(A9,I2)')'ISOLVER= ',isolver
      if(myid.eq.0) WRITE(3,'(A7,I5)')'ITMAX= ',itmax
      if(myid.eq.0) WRITE(3,'(A5,E12.3)')'TOL= ',tol
+# if defined (PRESSUREACC)
+     if(myid.eq.0) WRITE(3,'(A15,I2)')'ACC_METHOD= ',ACC_METHOD
+      if(ACC_METHOD==1) then
+          if(myid.eq.0) WRITE(3,'(A10,I5)')'PDI_INT= ',PDI_INT
+      elseif(ACC_METHOD==2) then
+          if(myid.eq.0) WRITE(3,'(A10,I5)')'NUM_PSUB= ',NUM_PSUB
+      endif
+# endif
 # else
      WRITE(3,'(A9,I2)')'ISOLVER= ',isolver
      WRITE(3,'(A7,I5)')'ITMAX= ',itmax
      WRITE(3,'(A5,E12.3)')'TOL= ',tol
+# if defined (PRESSUREACC)
+     WRITE(3,'(A15,I2)')'ACC_METHOD= ',ACC_METHOD
+      if(ACC_METHOD==1) then
+          if(myid.eq.0) WRITE(3,'(A10,I5)')'PDI_INT= ',PDI_INT
+      elseif(ACC_METHOD==2) then
+          if(myid.eq.0) WRITE(3,'(A10,I5)')'NUM_PSUB= ',NUM_PSUB
+      endif
 # endif
+# endif
+
 
      ! periodic bc
      CALL GET_LOGICAL_VAL(PERIODIC_X,FILE_NAME,'PERIODIC_X',line)
@@ -1713,9 +1753,23 @@
 !
 # endif
 
+! calculate the time consumption for poisson solver, added by HU, 20220811
+      time_poi = Zero
+      pertime_poi = Zero
 ! poisson solver (for NSPCG use)
      neqns = (Iend-Ibeg+1)*(Jend-Jbeg+1)*(Kend-Kbeg+1)
      ALLOCATE(Coef(5*neqns,5*15),JCoef(5*15),Rhs(neqns))
+# if defined (PRESSUREACC)
+      if(ACC_METHOD==1) then
+          neqns2 = neqns / PDI_INT
+          ALLOCATE(Coef2(5*neqns2,5*15),JCoef2(5*15),Rhs2(neqns2))
+      elseif(ACC_METHOD==2) then
+          neqns2 = (Iend-Ibeg+1)*(Jend-Jbeg+1)*NUM_PSUB
+          ALLOCATE(Coef2(5*neqns2,5*15),JCoef2(5*15),Rhs2(neqns2))
+          ALLOCATE(mask_p(Kloc1))
+      endif
+# endif
+
 !
      end subroutine allocate_variables
 !
@@ -1809,6 +1863,7 @@
      stop
 # endif
      endif
+     close(29)
      do k = Kbeg,Kend
         dsig(k) = dsig(k) / 100.0;
      enddo
@@ -2879,6 +2934,14 @@
      DTrac0 = Zero
      Trin_X0 = Zero
      Trin_Xn = Zero
+# endif
+!-------------------
+
+!---------------- added by HU, 20220828
+# if defined (PRESSUREACC)
+      if(ACC_METHOD==2) then
+          mask_p = Zero
+      endif
 # endif
 !-------------------
 

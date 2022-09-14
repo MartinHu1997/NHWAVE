@@ -139,7 +139,7 @@ by HU
 · LIMITER_TYPE = 'NMIN': Another Minmod Limiter [ limiter(A, B) = B * max(0, min(p*A/B, 1.0), min(A/B, p)) and p∈[1,2] ];
 · LIMITER_TYPE = 'VANA': van Albada Limiter;
 · LIMITER_TYPE = 'MSUP': Minmod-Superbee Limiter;
-■ Addition a if-else-end instructions for the simulations in 2-D vertical domain (subroutine diffusion, nhwave.F)
+■ Addition an if-else-end instruction for the simulations in 2-D vertical domain (subroutine diffusion, nhwave.F)
 · at the end of subroutine diffusion, we added: if (Nglob == 1) then to make y-related diffusion terms equal to Zero( Diffxy = Diffyx = Diffyy = Diffyz = Diffzy = 0 ).
 //
 
@@ -152,4 +152,29 @@ by HU
      In this program, 'StemD' represents the Stem Size
 · The local variables, 'cfk' and 'cfe', are no longer defined in the subroutines kepsilon and kepsilon_3D now (nhwave.F)
  -- 'Cfk' and 'Cfe' are required for input file now (input.txt)
+//
+
+UPDATE_00011
+by HU
+2022/03/29
+■ Debug (OBSTACLE Model)
+· In the subroutine set_obsflag (nhwave.f), some FLAGs, 'OBSTACLE', are replaced with 'DEFORMABLESLIDE'
+ -- because the suffix '_gs' belongs to the DEFORMABLESLIDE Model
+· In the subroutine imm_obs (nhwave.f), an if-end instruction for 2-D vertical simulation has been added
+ -- if Nglob /= 1, the calculations of ObsForceY are carried out; if Nglob == 1, ObsForceY = 0.
+//
+
+UPDATE_00012
+by HU
+2022/08/12
+■ Add a new poisson solver (pressure_PDI.F)
+· In this solver, the dynamic pressure is solved in a coarser vertical grid, which can accelerate the solving process.
+· Add a new FLAG in the makefile: FLAG = -DPRESSUREACC.
+· New parameters for the poisson solver:
+ - ACC_METHOD: If ACC_METHOD = 1, Poisson PDI Method (Shi et. al, 2015) is used and another parameter PDI_INT is needed.
+ - PDI_INT(Integer): the number of interval grids between the neighbouring pressure point in the coarse vertical grid.
+   For example, if the number of the σ-vertical grid is [Kglob], then the numbers of pressures points in the coarser grid is [Kglob/PDI_INT + 1]
+   Note: Mod(Kglob, PDI_INT) must be zero and PDI_INT>1.
+ - Reference:
+    Shi Jian, Shi Fengyan, Kirby J. T., Ma Gangfeng, Wu Guoxiang, Tong Chaofeng and Zheng Jinhai. Pressure Decimation and Interpolation (PDI) method for a baroclinic non-hydrostatic model. Ocean Modelling, 2015, 96, 265-279.
 //

@@ -261,7 +261,15 @@
      real(SP), dimension(:),   allocatable :: Rhs
      integer,  dimension(:),   allocatable :: JCoef
      real(SP), dimension(:,:), allocatable :: Coef
-	 
+      real(SP) :: time_poi, pertime_poi    ! added by HU, 20220811
+     
+# if defined (PRESSUREACC)
+      integer :: ACC_METHOD,PDI_INT,neqns2, NUM_PSUB
+      real(SP), dimension(:),   allocatable :: Rhs2
+      integer,  dimension(:),   allocatable :: JCoef2, n_psub,mask_p
+      real(SP), dimension(:,:), allocatable :: Coef2
+# endif
+     
      ! added by Cheng for nesting
 # if defined(COUPLING)
 ! coupling

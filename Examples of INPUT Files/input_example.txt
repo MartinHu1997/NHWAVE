@@ -87,6 +87,7 @@ COUPLING_FILE = coupling.txt
 ! Scalar convection scheme: "TVD" or "HLPA"
 ! LIMITER_TYPE = "MINMOD" : Minmod limiter;
 !                       = "VANLEER" : Van Leer limiter (DEFAULT)
+!                       = "MONO" : Monotonized central-difference Limiter (MC)
 !                       = "SUPERBEE" : Superbee limiter
 HIGH_ORDER = SECOND
 TIME_ORDER = SECOND
@@ -166,6 +167,11 @@ MinDep = 0.02
 ISOLVER = 2
 ITMAX = 1000
 TOL = 1.e-8
+
+! USE Acceleration Method (added by HU, 202209)
+ACC_METHOD = 1
+! ACC_METHOD=1 --> PDI Method. PDI_INT is needed
+PDI_INT = 10
 
 ! ------------------PERIODIC BC------------------------------------
 ! periodic=.true. : periodic boundary condition in y direction

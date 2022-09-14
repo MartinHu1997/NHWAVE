@@ -1,0 +1,6 @@
+These files (.txt) in this folder are the inputs for a case of Lock-Exchange flow.
+The computational domain is a vertical 2-dimension tank, which is discretized by 800 uniform grids in horizontal and 200 uniform σ-layers in vertical.
+The other parameters can be found in Shi et. al (2015).
+
+REFERENCE:
+Shi, J., Shi, F., Kirby, J. T., Ma, G., Wu, G., Tong, C., & Zheng, J. (2015). Pressure Decimation and Interpolation (PDI) method for a baroclinic non-hydrostatic model. Ocean Modelling, 96, 265–279. https://doi.org/10.1016/j.ocemod.2015.09.010
